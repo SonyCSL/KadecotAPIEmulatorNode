@@ -1,0 +1,7 @@
+{
+  "name": "Nise",
+  "version": "0.0.1",
+  "dependencies": {
+      "ws": "0.8.0"
+  }
+}
