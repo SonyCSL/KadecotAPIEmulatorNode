@@ -33,9 +33,20 @@ console.log(lib.getLocalAddress());
 
 console.log("-- startup websocket --");
 
+var support_main_profile = {
+	"deviceId":1
+	,"protocol":"support"
+	,"deviceType":"main"
+	,"description":"Kadecot"
+	,"status":true
+	,"nickname":"Kadecot"
+	,"ip_addr":"127.0.0.1"
+	,"location":{"main":"Others","sub":""}
+}
+
 var distmeter_profile = {
   description: "{\"ClassGroupCode\":2,\"ClassCode\":135}",
-  deviceId:    1,
+  deviceId:    2,
   deviceType:  "PowerDistributionBoardMetering",
   ip_addr:     "-----",
   location:    {main: "Others", sub: ""},
@@ -43,9 +54,10 @@ var distmeter_profile = {
   protocol:    "echonetlite",
   status:      true
 };
+
 var smartmeter_profile = {
   description: "{\"ClassGroupCode\":2,\"ClassCode\":136}",
-  deviceId:    2,
+  deviceId:    3,
   deviceType:  "SmartElectricEnergyMeter",
   ip_addr:     "-----",
   location:    {main: "Others", sub: ""},
@@ -53,6 +65,11 @@ var smartmeter_profile = {
   protocol:    "echonetlite",
   status:      true
 };
+
+var support_main = {
+	PowerNow:30303
+	,PowerHistory:[4,6,4,9]
+}
 
 var distmeter = {
   "OperationStatus": 0x30,
@@ -68,8 +85,8 @@ var smartmeter = {
   "HistoricalDataOfMeasuredCumulativeAmountsOfElectricEnergyNormalDirection": 5000000
 };
 
-var device_profile = [distmeter_profile, smartmeter_profile];
-var devices = [distmeter, smartmeter];
+var device_profile = [support_main_profile,distmeter_profile, smartmeter_profile];
+var devices = [support_main, distmeter, smartmeter];
 
 var sessionId = 0;
 var WebSocketServer = require('ws').Server
@@ -129,6 +146,17 @@ wss.on('connection', function connection(ws) {
         target_device[prop_name] = prop_value;
         var ret = [WAMP_MSG_TYPE.RESULT,reqid,{deviceId:target_device_id},[],{"propertyValue": prop_value}];
         ws.send(JSON.stringify(ret));
+      }else{
+        console.log("Unknown property:" + prop_name);
+      }
+    } else if(	method === "com.sonycsl.kadecot.support.procedure.PowerNow"
+	||	method === "com.sonycsl.kadecot.support.procedure.PowerHistory" ){
+      var target_device_id = target.deviceId;
+      var target_device = devices[target_device_id-1];
+      var prop_name = method.substring(method.lastIndexOf('.')+1) ;
+      if(prop_name in target_device){
+	var ret = [WAMP_MSG_TYPE.RESULT,reqid,{deviceId:target_device_id},[],{"value": target_device[prop_name]}];
+	ws.send(JSON.stringify(ret));
       }else{
         console.log("Unknown property:" + prop_name);
       }
