@@ -180,7 +180,7 @@ wss.on('connection', function connection(ws) {
 	var subid ;
 	if( topic == "com.sonycsl.kadecot.support.topic.PowerNow" )
 		subid = powerNowSubscriptionID = ++sessionId ;
-	else if( topic == "com.sonycsl.kadecot.support.topic.PowerNow" )
+	else if( topic == "com.sonycsl.kadecot.support.topic.PowerHistory" )
 		subid = powerHistorySubscriptionID = ++sessionId ;
 
 	ws.send(JSON.stringify(
