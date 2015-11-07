@@ -66,10 +66,15 @@ var smartmeter_profile = {
   status:      true
 };
 
-var support_main = {
-	PowerNow:30303
-	,PowerHistory:[4,6,4,9]
+var support_main = {};
+{	// Initialize support_main object
+	support_main.PowerNow = Math.random()*3000 ;
+	support_main.PowerHistory = new Array(48) ;
+	for( var phi=0;phi<support_main.PowerHistory.length;++phi )
+		support_main.PowerHistory[phi] = Math.random()*2 ;
 }
+
+
 
 var distmeter = {
   "OperationStatus": 0x30,
@@ -161,7 +166,51 @@ wss.on('connection', function connection(ws) {
         console.log("Unknown property:" + prop_name);
       }
     }
+
+
   });
+
+  var powerNowSubscriptionID , powerHistorySubscriptionID ;
+  addEventListener(WAMP_MSG_TYPE.SUBSCRIBE, function(data){
+    var reqid  = data[1];
+    var opt = data[2];
+    var topic = data[3];
+	console.log('Subscribe : '+JSON.stringify(data));
+
+	var subid ;
+	if( topic == "com.sonycsl.kadecot.support.topic.PowerNow" )
+		subid = powerNowSubscriptionID = ++sessionId ;
+	else if( topic == "com.sonycsl.kadecot.support.topic.PowerNow" )
+		subid = powerHistorySubscriptionID = ++sessionId ;
+
+	ws.send(JSON.stringify(
+		[WAMP_MSG_TYPE.SUBSCRIBED, reqid, subid ]
+	));
+
+  }) ;
+
+  // Periodical publishes
+    setInterval( function(){
+	console.log('Periodical publish') ;
+
+	support_main.PowerNow = Math.random()*3000 ;
+	support_main.PowerHistory.shift() ;
+	support_main.PowerHistory.push(Math.random()*2) ;
+
+	ws.send(JSON.stringify(
+		[WAMP_MSG_TYPE.EVENT, powerNowSubscriptionID, ++sessionId,{},[]
+			,{'value':support_main.PowerNow}
+		]
+	));
+
+	ws.send(JSON.stringify(
+		[WAMP_MSG_TYPE.EVENT, powerHistorySubscriptionID, ++sessionId,{},[]
+			,{'value':support_main.PowerHistory}
+		]
+	));
+
+    },10000 ) ;
+
 
   ws.on('message', function incoming(message) {
     console.log(new Date() + ': received: %s', message);
